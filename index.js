@@ -1,35 +1,62 @@
-const express = require('express');
 const { createMachine, interpret } = require('xstate');
+
+const express = require('express');
+const axios = require('axios').default;
 const app = express();
 const port = 3005;
+
+
+app.use(express.json());
+
 
 const RestMachine = createMachine({
     id: "smRestMachine",
     context: {
-        data: null
+        data: null,
+        error: null,
     },
     states: {
-        ideal: {
-            on: {
-                "HELLO": { target: "hello" }
+        noQuery: {},
+        hasQuery: {},
+        loading: {
+            invoke: {
+                src: "runQuery",
+                onDone: { target: "hasResult", actions: ["setResult"] },
+                onError: { target: "hasError", actions: ["setError"] }
             }
         },
-        hello: {
-            entry: (ctx, ev) => ctx.data = "hello world"
+        hasResult: {},
+        hasError: {}
+    },
+    on: {
+        "LOAD": { target: "loading" }
+    },
+    initial: "noQuery"
+}, {
+    services: {
+        runQuery: async () => {
+            return await axios.get("http://localhost:5000/category");
         }
     },
-    initial: "ideal"
+    actions: {
+        setResult: (ctx, ev) => { ctx.data = ev.data.data; },
+        setError: (ctx, ev) => { ctx.data = ev.data.toJSON(); },
+    }
 });
 const restMachine = interpret(RestMachine);
 setTimeout(() => restMachine.start(), 0);
 
 app.get('/', (req, res) => {
-    res.send(restMachine.state.toJSON());
+    res.send({
+        state: restMachine.state.value,
+        data: restMachine.state.context.data,
+        error: restMachine.state.context.error
+    });
 });
 
-app.post('/hello', (req, res) => {
-    restMachine.send({ type: req.path.substring(1).toUpperCase() });
-    res.send(restMachine.state.context.data);
+app.post('/send', (req, res) => {
+    restMachine.send({ type: req.body.event.toUpperCase() });
+    res.send({ sate: restMachine.state.value });
 });
 
 app.listen(port, () => {
