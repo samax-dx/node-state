@@ -4,6 +4,7 @@ const app = express();
 const port = 3005;
 
 const RestMachine = createMachine({
+    id: "smRestMachine",
     context: {
         data: null
     },
@@ -20,15 +21,10 @@ const RestMachine = createMachine({
     initial: "ideal"
 });
 const restMachine = interpret(RestMachine);
-
-app.use((req, res, next) => {
-    restMachine.start();
-    res.on("finish", () => restMachine.stop());
-    next();
-});
+setTimeout(() => restMachine.start(), 0);
 
 app.get('/', (req, res) => {
-    res.send('Index!');
+    res.send(restMachine.state.toJSON());
 });
 
 app.post('/hello', (req, res) => {
