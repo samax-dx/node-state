@@ -1,13 +1,15 @@
-const { createMachine, interpret, assign } = require('xstate');
-
+const http = require('http');
 const express = require('express');
+const { ApolloServer } = require('apollo-server-express');
+const {gql,ApolloServerPluginDrainHttpServer} = require('apollo-server-core');
+const cors = require('cors');
+
+const { createMachine, interpret, assign } = require('xstate');
 const axios = require('axios').default;
+
+
 const app = express();
 const port = 3005;
-
-
-app.use(express.json());
-
 
 const RestMachine = createMachine({
     id: "smRestMachine",
@@ -72,6 +74,8 @@ app.get('/', (req, res) => {
     });
 });
 
+app.use(cors(), express.json());
+
 app.post('/send', (req, res) => {
     restMachine.send({
         type: req.body.event.type.toUpperCase(),
@@ -80,6 +84,53 @@ app.post('/send', (req, res) => {
     res.send({ sate: restMachine.state.value });
 });
 
-app.listen(port, () => {
-    console.log(`Example app listening at http://localhost:${port}`)
-});
+const typeDefs = gql`
+  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
+
+  # This "Book" type defines the queryable fields for every book in our data source.
+  type Book {
+    title: String
+    author: String
+  }
+
+  # The "Query" type is special: it lists all of the available queries that
+  # clients can execute, along with the return type for each. In this
+  # case, the "books" query returns an array of zero or more Books (defined above).
+  type Query {
+    books: [Book]
+  }
+`;
+
+const books = [
+    {
+        title: 'The Awakening',
+        author: 'Kate Chopin',
+    },
+    {
+        title: 'City of Glass',
+        author: 'Paul Auster',
+    },
+];
+
+const resolvers = {
+    Query: {
+        books: () => books,
+    },
+};
+
+async function startServer() {
+    const httpServer = http.createServer(app);
+    const gqlServer = new ApolloServer({
+        typeDefs,
+        resolvers,
+        plugins: [ApolloServerPluginDrainHttpServer({ httpServer })],
+    });
+
+    await gqlServer.start();
+    app.use(gqlServer.getMiddleware({ path: "/gql" }));
+
+    httpServer.listen({ host: "127.0.0.1", port }, () => {
+        console.log(`express.js running at http://localhost:${port}/,\napollographql landing page http://localhost:${port}/gql`);
+    });
+}
+startServer();
