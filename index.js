@@ -1,4 +1,4 @@
-const { createMachine, interpret } = require('xstate');
+const { createMachine, interpret, assign } = require('xstate');
 
 const express = require('express');
 const axios = require('axios').default;
@@ -29,13 +29,31 @@ const RestMachine = createMachine({
         hasError: {}
     },
     on: {
-        "LOAD": { target: "loading" }
+        "LOAD": {
+            target: "loading",
+            actions: assign({
+                query: (ctx, ev) => {
+                    const ev_data = typeof ev.data === "object" ? ev.data : {};
+
+                    const restActions = {
+                        idEquals: id => `${id}`,
+                        productNameContains: n => `productNameContains/${n}`,
+                    };
+
+                    const params = Object.keys(ev_data).map(
+                        k => restActions[k] && restActions[k](ev_data[k])
+                    );
+
+                    return params.length ? `/${params.join("/")}` : "";
+                }
+            })
+        }
     },
     initial: "noQuery"
 }, {
     services: {
-        runQuery: async () => {
-            return await axios.get("http://localhost:5000/category");
+        runQuery: async (ctx, ev) => {
+            return await axios.get(`http://localhost:5000/category${ctx.query}`);
         }
     },
     actions: {
@@ -55,7 +73,10 @@ app.get('/', (req, res) => {
 });
 
 app.post('/send', (req, res) => {
-    restMachine.send({ type: req.body.event.toUpperCase() });
+    restMachine.send({
+        type: req.body.event.type.toUpperCase(),
+        data: req.body.event.data
+    });
     res.send({ sate: restMachine.state.value });
 });
 
