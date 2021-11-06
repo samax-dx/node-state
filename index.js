@@ -89,11 +89,21 @@ app.post('/send', (req, res) => {
 app.post('/eval', (req, res) => {
     const methods = {
         add: R.add,
-        sub: (x, y) => x - y,
+        sub: R.subtract,
+        trim: R.trim,
+        toLower: R.toLower,
+        toUpper: R.toUpper,
     };
-    const method = methods[req.body.method];
-    const data = R.apply(method, req.body.args);
+    const useMethods = req.body.methods.map(method => methods[method]);
 
+    let data = Object.values(req.body.obj)[0];
+    for (let i = 0, total = useMethods.length; i < total; ++i) {
+        if (Array.isArray(data)) {
+            data = R.apply(useMethods[i], data);
+        } else {
+            data = R.call(useMethods[i], data);
+        }
+    }
     res.send({ data });
 });
 
