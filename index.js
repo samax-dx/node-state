@@ -56,17 +56,13 @@ const RestMachine = createMachine({
             target: "hasResult",
             actions: assign({
                 data: (ctx, ev) => {
-                    const add = (x, y) => x + y;
-                    const sub = (x, y) => x - y;
+                    const methods = {
+                        add: R.add,
+                        sub: (x, y) => x - y,
+                    };
+                    const method = methods[ev.method];
 
-                    switch(ev.fn) {
-                        case "add":
-                            return R.apply(add, ev.args);
-                        case "substract":
-                            return R.call(sub, ...ev.args);
-                        default:
-                            return null;
-                    }
+                    return R.apply(method, ev.args);
                 }
             })
         }
@@ -107,7 +103,7 @@ app.post('/send', (req, res) => {
 app.post('/run', (req, res) => {
     restMachine.send({
         type: "RUN",
-        fn: req.body.fn,
+        method: req.body.method,
         args: req.body.args
     });
     res.send({ data: restMachine.state.context.data });
