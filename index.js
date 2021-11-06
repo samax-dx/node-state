@@ -51,20 +51,6 @@ const RestMachine = createMachine({
                     return params.length ? `/${params.join("/")}` : "";
                 }
             })
-        },
-        "RUN": {
-            target: "hasResult",
-            actions: assign({
-                data: (ctx, ev) => {
-                    const methods = {
-                        add: R.add,
-                        sub: (x, y) => x - y,
-                    };
-                    const method = methods[ev.method];
-
-                    return R.apply(method, ev.args);
-                }
-            })
         }
     },
     initial: "noQuery"
@@ -100,13 +86,15 @@ app.post('/send', (req, res) => {
     res.send({ sate: restMachine.state.value });
 });
 
-app.post('/run', (req, res) => {
-    restMachine.send({
-        type: "RUN",
-        method: req.body.method,
-        args: req.body.args
-    });
-    res.send({ data: restMachine.state.context.data });
+app.post('/eval', (req, res) => {
+    const methods = {
+        add: R.add,
+        sub: (x, y) => x - y,
+    };
+    const method = methods[req.body.method];
+    const data = R.apply(method, req.body.args);
+
+    res.send({ data });
 });
 
 const typeDefs = gql`
