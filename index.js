@@ -7,6 +7,8 @@ const cors = require('cors');
 const { createMachine, interpret, assign } = require('xstate');
 const axios = require('axios').default;
 
+const R = require("ramda");
+
 
 const app = express();
 const port = 3005;
@@ -49,6 +51,24 @@ const RestMachine = createMachine({
                     return params.length ? `/${params.join("/")}` : "";
                 }
             })
+        },
+        "RUN": {
+            target: "hasResult",
+            actions: assign({
+                data: (ctx, ev) => {
+                    const add = (x, y) => x + y;
+                    const sub = (x, y) => x - y;
+
+                    switch(ev.fn) {
+                        case "add":
+                            return R.apply(add, ev.args);
+                        case "substract":
+                            return R.call(sub, ...ev.args);
+                        default:
+                            return null;
+                    }
+                }
+            })
         }
     },
     initial: "noQuery"
@@ -82,6 +102,15 @@ app.post('/send', (req, res) => {
         data: req.body.event.data
     });
     res.send({ sate: restMachine.state.value });
+});
+
+app.post('/run', (req, res) => {
+    restMachine.send({
+        type: "RUN",
+        fn: req.body.fn,
+        args: req.body.args
+    });
+    res.send({ data: restMachine.state.context.data });
 });
 
 const typeDefs = gql`
