@@ -97,13 +97,13 @@ app.post('/eval', (req, res) => {
     const useMethods = req.body.methods.map(method => methods[method]);
 
     let data = Object.values(req.body.obj)[0];
-    for (let i = 0, total = useMethods.length; i < total; ++i) {
+    useMethods.forEach(method => {
         if (Array.isArray(data)) {
-            data = R.apply(useMethods[i], data);
+            data = R.apply(method, data);
         } else {
-            data = R.call(useMethods[i], data);
+            data = R.call(method, data);
         }
-    }
+    });
     res.send({ data });
 });
 
