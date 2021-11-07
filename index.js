@@ -1,24 +1,21 @@
 const http = require('http');
 const express = require('express');
-const { ApolloServer } = require('apollo-server-express');
-const {gql,ApolloServerPluginDrainHttpServer} = require('apollo-server-core');
 const cors = require('cors');
-
-const { createMachine, interpret, assign } = require('xstate');
-const axios = require('axios').default;
+const { ApolloServer } = require('apollo-server-express');
+const { gql, ApolloServerPluginDrainHttpServer } = require('apollo-server-core');
+const { createMachine, interpret, assign } = require('xstate')
 
 const R = require("ramda");
+const axios = require('axios').default;
+
+const rpcMethods = require('./rpcMethods');
 
 
 const app = express();
 const port = 3005;
 
 const RestMachine = createMachine({
-    id: "smRestMachine",
-    context: {
-        data: null,
-        error: null,
-    },
+    initial: "noQuery",
     states: {
         noQuery: {},
         hasQuery: {},
@@ -53,7 +50,11 @@ const RestMachine = createMachine({
             })
         }
     },
-    initial: "noQuery"
+    context: {
+        data: null,
+        error: null,
+    },
+    id: "smRestMachine",
 }, {
     services: {
         runQuery: async (ctx, ev) => {
@@ -68,6 +69,8 @@ const RestMachine = createMachine({
 const restMachine = interpret(RestMachine);
 setTimeout(() => restMachine.start(), 0);
 
+app.use(cors(), express.json());
+
 app.get('/', (req, res) => {
     res.send({
         state: restMachine.state.value,
@@ -75,8 +78,6 @@ app.get('/', (req, res) => {
         error: restMachine.state.context.error
     });
 });
-
-app.use(cors(), express.json());
 
 app.post('/send', (req, res) => {
     restMachine.send({
@@ -87,15 +88,7 @@ app.post('/send', (req, res) => {
 });
 
 app.post('/eval', (req, res) => {
-    const methods = {
-        add: R.add,
-        sub: R.subtract,
-        trim: R.trim,
-        toLower: R.toLower,
-        toUpper: R.toUpper,
-    };
-
-    const usedMethods = req.body.methods.map(method => methods[method]);
+    const usedMethods = req.body.methods.map(method => rpcMethods[method]);
     const args = Object.values(req.body.obj);
 
     res.send({ data: R.pipe(...usedMethods)(...args) });
