@@ -94,17 +94,11 @@ app.post('/eval', (req, res) => {
         toLower: R.toLower,
         toUpper: R.toUpper,
     };
-    const useMethods = req.body.methods.map(method => methods[method]);
 
-    let data = Object.values(req.body.obj)[0];
-    useMethods.forEach(method => {
-        if (Array.isArray(data)) {
-            data = R.apply(method, data);
-        } else {
-            data = R.call(method, data);
-        }
-    });
-    res.send({ data });
+    const usedMethods = req.body.methods.map(method => methods[method]);
+    const args = Object.values(req.body.obj);
+
+    res.send({ data: R.pipe(...usedMethods)(...args) });
 });
 
 const typeDefs = gql`
