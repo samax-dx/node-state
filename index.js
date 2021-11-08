@@ -88,10 +88,10 @@ app.post('/send', (req, res) => {
 });
 
 app.post('/eval', (req, res) => {
-    const result = [];
+    const result = {};
 
-    const resTapper = method => [method, R.tap(data => result.push(data))];
-    const tappedMethods = req.body.methods.map(m => resTapper(rpcMethods[m]));
+    const resTapper = m => [rpcMethods[m], R.tap(data => result[m] = data)];
+    const tappedMethods = req.body.methods.map(method => resTapper(method));
     const topMethodArgs = Object.values(req.body.obj);
 
     R.pipe(...tappedMethods.flat())(...topMethodArgs)
