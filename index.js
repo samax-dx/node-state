@@ -88,12 +88,15 @@ app.post('/send', (req, res) => {
 });
 
 app.post('/eval', (req, res) => {
-    const logTapper = method => [method, R.tap(data => console.log(data))];
+    const result = [];
 
-    const methods = req.body.methods.map(m => logTapper(rpcMethods[m]));
+    const resTapper = method => [method, R.tap(data => result.push(data))];
+    const tappedMethods = req.body.methods.map(m => resTapper(rpcMethods[m]));
     const topMethodArgs = Object.values(req.body.obj);
 
-    res.send({ data: R.pipe(...methods.flat())(...topMethodArgs) });
+    R.pipe(...tappedMethods.flat())(...topMethodArgs)
+
+    res.send(result);
 });
 
 const typeDefs = gql`
