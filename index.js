@@ -88,13 +88,15 @@ app.post('/send', (req, res) => {
 });
 
 app.post('/eval', (req, res) => {
-    const result = {};
+    const result = {}; console.log(req.body.methods);
 
     const resTapper = m => [rpcMethods[m], R.tap(data => result[m] = data)];
     const tappedMethods = req.body.methods.map(method => resTapper(method));
-    const topMethodArgs = Object.values(req.body.obj);
+    const topMethodData = req.body.data;
 
-    R.pipe(...tappedMethods.flat())(...topMethodArgs)
+    tappedMethods.unshift([_ => topMethodData, R.tap(v => result[v] = v)]);
+
+    R.pipe(...tappedMethods.flat())(topMethodData); console.log(result);
 
     res.send(result);
 });
