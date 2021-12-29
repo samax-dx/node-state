@@ -136,11 +136,10 @@ app.post('/ofbiz', (req, res) => {
             ]
         }
     });
-    const jsessionid = "2F9F34F83D6EAFC4B0917CE7858AA091";
-    const ofbizVisitor = 10100;
+    const jsessionid = "D20700428822779AF833813FAC9EDA68";
     const requestHeaders = {
         'Content-Type': 'text/xml',
-        'Cookie': `JSESSIONID=${jsessionid}.jvm1; OFBiz.Visitor=${ofbizVisitor};`,
+        'Cookie': `JSESSIONID=${jsessionid}.jvm1`,
     };
     const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
