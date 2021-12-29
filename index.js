@@ -1,9 +1,12 @@
 const http = require('http');
+const https = require('https');
 const express = require('express');
 const cors = require('cors');
 const { ApolloServer } = require('apollo-server-express');
 const { gql, ApolloServerPluginDrainHttpServer } = require('apollo-server-core');
 const { createMachine, interpret, assign } = require('xstate')
+const { XMLParser, XMLBuilder, XMLValidator } = require('fast-xml-parser');
+
 
 const R = require("ramda");
 const axios = require('axios').default;
@@ -99,6 +102,54 @@ app.post('/eval', (req, res) => {
     R.pipe(...tappedMethods.flat())(topMethodData); console.log(result);
 
     res.send(result);
+});
+
+app.post('/ofbiz', (req, res) => {
+    const xmlRpcUrl = "https://localhost:8443/webtools/control/xmlrpc";
+    const strXmlVer = '<?xml version="1.0"?>';
+    const xmlRpcPayload = strXmlVer + new XMLBuilder().build({
+        methodCall: {
+            methodName: req.body.method,
+            params: [
+                {
+                    param: {
+                        value: {
+                            struct: {
+                                member: [
+                                    {
+                                        name: "login.username",
+                                        value: { string: "admin" }
+                                    },
+                                    {
+                                        name: "login.password",
+                                        value: { string: "ofbiz" }
+                                    },
+                                    ...req.body.params.map(param => ({
+                                        name: param.name,
+                                        value: { [param.type]: param.value }
+                                    })),
+                                ],
+                            }
+                        }
+                    }
+                },
+            ]
+        }
+    });
+    const authCookie = "A1C888E07C0BDB720AC632F0FC4265AD";
+    const requestHeaders = {
+        'Content-Type': 'text/xml',
+        'Cookie': `webtools.autoUserLoginId=admin; JSESSIONID=${authCookie}.jvm1; webtools.securedLoginId=admin; username-localhost-8888="2|1:0|10:1637473132|23:username-localhost-8888|44:NzAzYjhhNjFlMTJkNDQ0YTgwNDAxNjJhNDhkZGIxMGI=|bb0ecd57bc4c056c0e0a3108826a73f022e26ef5d6b6a336461ba5134bd12baf"; OFBiz.Visitor=10000`
+    };
+    const insecureAgent = new https.Agent({ rejectUnauthorized: false });
+
+    axios.post(
+        xmlRpcUrl,
+        xmlRpcPayload,
+        { headers: requestHeaders, httpsAgent: insecureAgent }
+    ).then(response => {
+        res.send(new XMLParser().parse(response.data));
+    });
 });
 
 const typeDefs = gql`
