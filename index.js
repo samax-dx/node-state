@@ -136,10 +136,11 @@ app.post('/ofbiz', (req, res) => {
             ]
         }
     });
-    const authCookie = "A1C888E07C0BDB720AC632F0FC4265AD";
+    const jsessionid = "2F9F34F83D6EAFC4B0917CE7858AA091";
+    const ofbizVisitor = 10100;
     const requestHeaders = {
         'Content-Type': 'text/xml',
-        'Cookie': `webtools.autoUserLoginId=admin; JSESSIONID=${authCookie}.jvm1; webtools.securedLoginId=admin; username-localhost-8888="2|1:0|10:1637473132|23:username-localhost-8888|44:NzAzYjhhNjFlMTJkNDQ0YTgwNDAxNjJhNDhkZGIxMGI=|bb0ecd57bc4c056c0e0a3108826a73f022e26ef5d6b6a336461ba5134bd12baf"; OFBiz.Visitor=10000`
+        'Cookie': `JSESSIONID=${jsessionid}.jvm1; OFBiz.Visitor=${ofbizVisitor};`,
     };
     const insecureAgent = new https.Agent({ rejectUnauthorized: false });
 
