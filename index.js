@@ -6,6 +6,7 @@ const { ApolloServer } = require('apollo-server-express');
 const { gql, ApolloServerPluginDrainHttpServer } = require('apollo-server-core');
 const { createMachine, interpret, assign } = require('xstate')
 const { XMLParser, XMLBuilder, XMLValidator } = require('fast-xml-parser');
+const { xrValue, lnValue } = require("./xml-rpc-message-converter.js");
 
 
 const R = require("ramda");
@@ -109,7 +110,7 @@ app.post('/ofbiz', (req, res) => {
     const strXmlVer = '<?xml version="1.0"?>';
     const xmlRpcPayload = strXmlVer + new XMLBuilder().build({
         methodCall: {
-            methodName: req.body.method,
+            methodName: "runService",
             params: [
                 {
                     param: {
@@ -124,10 +125,14 @@ app.post('/ofbiz', (req, res) => {
                                         name: "login.password",
                                         value: { string: "ofbiz" }
                                     },
-                                    ...req.body.params.map(param => ({
-                                        name: param.name,
-                                        value: { [param.type]: param.value }
-                                    })),
+                                    {
+                                        name: "method",
+                                        value: { string: req.body.method }
+                                    },
+                                    {
+                                        name: "args",
+                                        value: xrValue(req.body.params)
+                                    },
                                 ],
                             }
                         }
@@ -136,7 +141,7 @@ app.post('/ofbiz', (req, res) => {
             ]
         }
     });
-    const jsessionid = "D20700428822779AF833813FAC9EDA68";
+    const jsessionid = "6D2064D577DB9D251DE6EF1726BFF433";
     const requestHeaders = {
         'Content-Type': 'text/xml',
         'Cookie': `JSESSIONID=${jsessionid}.jvm1`,
