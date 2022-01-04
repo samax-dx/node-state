@@ -141,7 +141,7 @@ app.post('/ofbiz', (req, res) => {
             ]
         }
     });
-    const jsessionid = "6D2064D577DB9D251DE6EF1726BFF433";
+    const jsessionid = "329039B7723A4851185F4A6B3E8837F5";
     const requestHeaders = {
         'Content-Type': 'text/xml',
         'Cookie': `JSESSIONID=${jsessionid}.jvm1`,
@@ -153,7 +153,24 @@ app.post('/ofbiz', (req, res) => {
         xmlRpcPayload,
         { headers: requestHeaders, httpsAgent: insecureAgent }
     ).then(response => {
-        res.send(new XMLParser().parse(response.data));
+        var xrResponse = new XMLParser().parse(response.data);
+console.log(JSON.stringify(xrResponse, null, 4));
+        if (typeof xrResponse === "object") {
+            if (xrResponse.html) {
+                return void (res.sendStatus(503));
+            }
+
+            if (xrResponse.methodResponse) {
+                const { value } = xrResponse.methodResponse.params.param;
+                if (value) {
+                    return void (res.send(lnValue(value)));
+                }
+            }
+        }
+
+        res.status(500).send({ error: "unknown error" });
+    }).catch(error => {
+        res.sendStatus(500);
     });
 });
 

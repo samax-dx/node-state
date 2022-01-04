@@ -75,14 +75,25 @@ var lnValue = valueXr => {
             var valueData = valueXr;
 
             if (valueType === "struct") {
-                return valueData["struct"]["member"].reduce((acc, v) => {
+                var member = valueData["struct"]["member"];
+                Array.isArray(member) || (member = [member]);
+
+                return member.reduce((acc, v) => {
                     acc[v["name"]] = lnValue(v["value"]);
                     return acc;
                 }, {});
             } else if (valueType === "array") {
-                return valueData["array"]["data"]["value"].map(v => lnValue(v));
+                var arrayData = valueData["array"]["data"];
+                arrayData || (arrayData = { value: [] });
+
+                var arrayDataValue = arrayData["value"];
+                Array.isArray(arrayDataValue) || (arrayDataValue = [arrayDataValue]);
+
+                return arrayDataValue.map(v => lnValue(v));
             } else if (valueType === "dateTime.iso8601") {
                 return new Date(valueData[valueType]);
+            } else if (valueType === "ex:nil") {
+                return null;
             } else {
                 if (valueType) {
                     return valueData[valueType];
