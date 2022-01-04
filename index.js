@@ -160,7 +160,7 @@ console.log(JSON.stringify(xrResponse, null, 4));
                 return void (res.sendStatus(503));
             }
 
-            if (xrResponse.methodResponse) {
+            if (xrResponse.methodResponse.params) {
                 const { value } = xrResponse.methodResponse.params.param;
                 if (value) {
                     return void (res.send(lnValue(value)));
