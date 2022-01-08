@@ -141,7 +141,7 @@ app.post('/ofbiz', (req, res) => {
             ]
         }
     });
-    const jsessionid = "329039B7723A4851185F4A6B3E8837F5";
+    const jsessionid = "7F7F9422CA86792B6A77677F97BB9099";
     const requestHeaders = {
         'Content-Type': 'text/xml',
         'Cookie': `JSESSIONID=${jsessionid}.jvm1`,
