@@ -141,7 +141,7 @@ app.post('/ofbiz', (req, res) => {
             ]
         }
     });
-    const jsessionid = "7F7F9422CA86792B6A77677F97BB9099";
+    const jsessionid = "9A8FC876D277A78DB8EF9C46ABEF2BAD";
     const requestHeaders = {
         'Content-Type': 'text/xml',
         'Cookie': `JSESSIONID=${jsessionid}.jvm1`,
@@ -154,7 +154,7 @@ app.post('/ofbiz', (req, res) => {
         { headers: requestHeaders, httpsAgent: insecureAgent }
     ).then(response => {
         var xrResponse = new XMLParser().parse(response.data);
-console.log(JSON.stringify(xrResponse, null, 4));
+
         if (typeof xrResponse === "object") {
             if (xrResponse.html) {
                 return void (res.sendStatus(503));
@@ -168,9 +168,9 @@ console.log(JSON.stringify(xrResponse, null, 4));
             }
         }
 
-        res.status(500).send({ error: "unknown error" });
+        return void (res.status(500).send({ error: "unknown error" }));
     }).catch(error => {
-        res.sendStatus(500);
+        return void (res.sendStatus(500));
     });
 });
 
@@ -208,7 +208,7 @@ const resolvers = {
     },
 };
 
-async function startServer() {
+async function startServer(/** @type {Express} */app) {
     const httpServer = http.createServer(app);
     const gqlServer = new ApolloServer({
         typeDefs,
@@ -223,4 +223,4 @@ async function startServer() {
         console.log(`express.js running at http://localhost:${port}/,\napollographql landing page http://localhost:${port}/gql`);
     });
 }
-startServer();
+startServer(app);
