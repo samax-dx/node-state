@@ -98,7 +98,7 @@ app.post('/eval', (req, res) => {
     const tappedMethods = req.body.methods.map(method => resTapper(method));
     const topMethodData = req.body.data;
 
-    tappedMethods.unshift([R.identity, R.tap(v => result[v] = v)]);
+    tappedMethods.unshift([R.identity, R.tap(v => result["default"] = v)]);
 
     R.pipe(...tappedMethods.flat())(topMethodData); console.log(result);
 
